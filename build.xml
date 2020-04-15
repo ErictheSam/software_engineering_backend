@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- WARNING: Eclipse auto-generated file.
+              Any modifications will be overwritten.
+              To include a user specific buildfile here, simply create one in the same
+              directory with the processing instruction <?eclipse.ant.import?>
+              as the first entry and export the buildfile again. --><project basedir="." default="build" name="Onthedeer" xmlns:jacoco="antlib:org.jacoco.ant" xmlns:cs="antlib:com.puppycrawl.tools.checkstyle.ant">
+    <property environment="env"/>
+    <property name="debuglevel" value="source,lines,vars"/>
+    <property name="target" value="1.8"/>
+    <property name="source" value="1.8"/>
+    
+    <taskdef uri="antlib:org.jacoco.ant" resource="org/jacoco/ant/antlib.xml">
+    	<classpath path="WebContent/WEB-INF/lib/jacocoant.jar"/>
+    </taskdef>
+
+    <path id="Web App Libraries.libraryclasspath">
+        <fileset dir = "WebContent/WEB-INF/lib">
+             <include name ="**/*.jar"/>
+        </fileset>
+    </path>
+    <path id="EAR Libraries.libraryclasspath"/>
+    <path id="Onthedeer.classpath">
+        <pathelement location="WebContent/WEB-INF/classes"/>
+        <path refid="Web App Libraries.libraryclasspath"/>
+        <path refid="EAR Libraries.libraryclasspath"/>
+    </path>
+    <target name="init">
+        <mkdir dir="WebContent/WEB-INF/classes"/>
+        <mkdir dir="checkstyle"/>
+        <copy includeemptydirs="false" todir="WebContent/WEB-INF/classes">
+            <fileset dir="src">
+                <exclude name="**/*.java"/>
+            </fileset>
+        </copy>
+    </target>
+    <target name="cs" depends="init">
+    	<taskdef resource="com/puppycrawl/tools/checkstyle/ant/checkstyle-ant-task.properties" classpath="WebContent/WEB-INF/lib/checkstyle-8.25.jar" />
+    	<checkstyle config="WebContent/WEB-INF/lib/google_checks.xml" failureProperty="checkstyle.failure" failOnViolation="false">
+    		<classpath refid="Onthedeer.classpath"/>
+    		<formatter type="xml" tofile = "checkstyle/checkstyle_report.xml" />
+    		<fileset dir="src" />
+    	</checkstyle>
+    </target>
+    <target name="xmltohtml" depends="cs">
+    	<xslt in="checkstyle/checkstyle_report.xml" out="checkstyle/checkstyle.html" style="WebContent/WEB-INF/lib/checkstyle_frame.xsl">
+    		<param name="output.dir" expression="checkstyle" />
+    	</xslt>
+    </target>
+    <target name="clean">
+        <delete dir="WebContent/WEB-INF/classes"/>
+        <delete dir="test/classes"/>
+        <delete dir="test"/>
+        <delete dir="test/jacoco-result"/>
+        <delete dir="test/unit-test-report"/>
+        <delete dir="checkstyle"/>
+        <delete file="test/jacoco.exec"/>
+    </target>
+    <target depends="clean" name="cleanall"/>
+    <target depends="build-subprojects,build-project" name="build"/>
+    <target name="compile-test" depends="build">
+    <mkdir dir = "test"/>
+    	<mkdir dir = "test/classes"/>
+    	<mkdir dir = "test/jacoco-result"/>
+    	<mkdir dir="test/unit-test-report"/>
+    	<javac srcdir="src/test" debug="on" includeantruntime="on" destdir="test/classes" encoding="UTF8">
+    	<classpath refid="Onthedeer.classpath">
+    	</classpath>
+    	</javac>
+    </target>
+    <target name="run-unit-test" depends="compile-test">
+    	<jacoco:coverage destfile="test/jacoco.exec">
+    	<junit printsummary="on" haltonerror="off" fork="on">
+    	<classpath path = "test/classes"/>
+    	<formatter type="plain" usefile="off"/>
+    	<formatter type="xml" usefile="on"/>
+    	<!-- <test name="com.onthedeer.testserver.TestServer"></test> -->
+    	<batchtest todir="test/unit-test-report">
+    	<fileset dir="test/classes">
+    		<include name = "**/*.class"/>
+    	</fileset>
+    	</batchtest>
+    	
+    	<classpath refid="Onthedeer.classpath">
+    	</classpath>
+    	</junit>
+    	</jacoco:coverage>
+    </target>
+	<target name="jacoco-report" depends="run-unit-test">
+		<jacoco:report>
+			<executiondata>
+				<file file="test/jacoco.exec"/>
+			</executiondata>
+			<structure name="JaCoCo Ant Build">
+				<classfiles>
+                     <fileset dir="WebContent/WEB-INF/classes"/>
+				</classfiles>
+				<sourcefiles encoding="UTF-8">
+					<fileset dir="src"/>
+				</sourcefiles>
+			</structure>
+			<html destdir="test/jacoco-result"/>
+			<csv destfile="test/jacoco-result/report.csv"/>
+			<xml destfile="test/jacoco-result/report.xml"/>
+		</jacoco:report>
+	</target>
+    <target name="build-subprojects"/>
+    <target depends="init" name="build-project">
+        <echo message="${ant.project.name}: ${ant.file}"/>
+        <javac debug="true" debuglevel="${debuglevel}" destdir="WebContent/WEB-INF/classes" includeantruntime="false" source="${source}" target="${target}" encoding="UTF-8">
+            <src path="src/com"/>
+            <classpath refid="Onthedeer.classpath"/>
+        </javac>
+    </target>
+    <target description="Build all projects which reference this project. Useful to propagate changes." name="build-refprojects"/>
+    <target description="copy Eclipse compiler jars to ant lib directory" name="init-eclipse-compiler">
+        <copy todir="${ant.library.dir}">
+            <fileset dir="${ECLIPSE_HOME}/plugins" includes="org.eclipse.jdt.core_*.jar"/>
+        </copy>
+        <unzip dest="${ant.library.dir}">
+            <patternset includes="jdtCompilerAdapter.jar"/>
+            <fileset dir="${ECLIPSE_HOME}/plugins" includes="org.eclipse.jdt.core_*.jar"/>
+        </unzip>
+    </target>
+    <target description="compile project with Eclipse compiler" name="build-eclipse-compiler">
+        <property name="build.compiler" value="org.eclipse.jdt.core.JDTCompilerAdapter"/>
+        <antcall target="build"/>
+    </target>
+</project>
